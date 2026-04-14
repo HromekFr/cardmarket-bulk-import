@@ -5,6 +5,13 @@ import { readCsv } from '../../../utils/csv';
 
 const SETS_ENDPOINT = 'https://mtgjson.com/api/v5/csv/sets.csv';
 
+// MTGJSON mcmId corrections: MTGJSON maps these set codes to the wrong CardMarket expansion.
+// Each entry is: set code → correct CardMarket idExpansion.
+// M20: MTGJSON points to 2490 (Core 2020: Extras) instead of 2447 (Core 2020).
+const MCM_ID_OVERRIDES: Record<string, number> = {
+  M20: 2447,
+};
+
 async function getMTGJSONDataImpl() {
   const res = await fetch(SETS_ENDPOINT);
   const blob = await res.blob();
@@ -30,7 +37,7 @@ async function getMTGJSONDataImpl() {
         .filter((v) => !!v)
         .map((v) => v!.toString()),
       code: set.code!,
-      cardmarketId: set.mcmId,
+      cardmarketId: MCM_ID_OVERRIDES[set.code!] ?? set.mcmId,
     }));
 }
 

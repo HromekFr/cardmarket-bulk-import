@@ -90,18 +90,28 @@ export default defineBackground(() => {
 
   // ── pageComplete ─────────────────────────────────────────────────────────
   onMessage('cardmarket-bulk-import.pageComplete', async ({ data }) => {
-    const { listedCount, unmatchedCards, nextPageUrl } = data;
+    const { listedCount, unmatchedCards, remainingCards, nextPageUrl } = data;
     const state = await getAutomationState();
 
-    await dispatchAutomation({ type: 'recordListed', count: listedCount });
+    console.log(
+      `[automation] page ${state.currentPage} complete —`,
+      `listed: ${listedCount},`,
+      `not found this page: ${unmatchedCards.length},`,
+      `remaining for expansion: ${remainingCards.length},`,
+      `nextPageUrl: ${nextPageUrl ?? 'none'}`,
+    );
     if (unmatchedCards.length > 0) {
-      await dispatchAutomation({ type: 'recordUnmatched', cards: unmatchedCards });
+      console.log('[automation] not found this page:', unmatchedCards.map((c) => `${c.name} (${c.set})`));
     }
+
+    await dispatchAutomation({ type: 'recordListed', count: listedCount });
+    await dispatchAutomation({ type: 'setExpansionCards', cards: remainingCards });
+
     await dispatchAutomation({
       type: 'appendLog',
       entry: {
         timestamp: Date.now(),
-        message: `Page ${state.currentPage} done — ${listedCount} listed, ${unmatchedCards.length} unmatched.`,
+        message: `Page ${state.currentPage} done — ${listedCount} listed, ${unmatchedCards.length} not found on this page.`,
         detail: unmatchedCards.length > 0
           ? unmatchedCards.map((c) => `${c.name} (${c.set})`)
           : undefined,
@@ -109,42 +119,56 @@ export default defineBackground(() => {
     });
 
     // Decide what to do next
-    const decision = resolvePageCompletion(state.remainingExpansions, nextPageUrl);
+    const decision = resolvePageCompletion(state.remainingExpansions, nextPageUrl, remainingCards.length > 0);
+    console.log(`[automation] decision: ${decision.type}`);
     const { submissionDelay } = await getSettings();
 
     if (decision.type === 'nextPage') {
-      // Task 07: advance page, wait delay, navigate
+      // Still cards to place on subsequent pages — do not record unmatched yet
       await dispatchAutomation({ type: 'advancePage' });
       setTimeout(async () => {
         const s = await getAutomationState();
         if (s.status === 'running') await navigateTo(decision.navigateTo);
       }, submissionDelay);
 
-    } else if (decision.type === 'nextExpansion') {
-      // Task 08: advance expansion, wait delay, navigate to its first page
-      await dispatchAutomation({ type: 'advanceExpansion' });
-      await dispatchAutomation({
-        type: 'appendLog',
-        entry: {
-          timestamp: Date.now(),
-          message: `Expansion done — moving to next expansion (id: ${decision.expansionId}).`,
-        },
-      });
-      setTimeout(async () => {
-        const s = await getAutomationState();
-        if (s.status === 'running') {
-          const url = CM_BULK_LISTING_BASE + buildPageUrl(decision.expansionId, 1);
-          await navigateTo(url);
-        }
-      }, submissionDelay);
-
     } else {
-      // Task 08: all done
-      await dispatchAutomation({ type: 'complete' });
-      await dispatchAutomation({
-        type: 'appendLog',
-        entry: { timestamp: Date.now(), message: 'All expansions complete!' },
-      });
+      // Expansion is done — cards still in remainingCards were never listed
+      if (remainingCards.length > 0) {
+        const trulyUnmatched = remainingCards.map((c) => ({ name: c.name, set: c.set, quantity: c.quantity }));
+        console.log('[automation] truly unmatched (never listed):', trulyUnmatched.map((c) => `${c.name} (${c.set})`));
+        await dispatchAutomation({ type: 'recordUnmatched', cards: trulyUnmatched });
+      }
+
+      if (decision.type === 'nextExpansion') {
+        await dispatchAutomation({ type: 'advanceExpansion' });
+        await dispatchAutomation({
+          type: 'appendLog',
+          entry: {
+            timestamp: Date.now(),
+            message: `Expansion done — moving to next expansion (id: ${decision.expansionId}).`,
+          },
+        });
+        setTimeout(async () => {
+          const s = await getAutomationState();
+          if (s.status === 'running') {
+            const url = CM_BULK_LISTING_BASE + buildPageUrl(decision.expansionId, 1);
+            await navigateTo(url);
+          }
+        }, submissionDelay);
+
+      } else {
+        // All expansions complete
+        await dispatchAutomation({ type: 'complete' });
+        const finalState = await getAutomationState();
+        console.log(
+          `[automation] complete — total listed: ${finalState.listedCount},`,
+          `total unmatched: ${finalState.unmatchedCards.length}`,
+        );
+        await dispatchAutomation({
+          type: 'appendLog',
+          entry: { timestamp: Date.now(), message: 'All expansions complete!' },
+        });
+      }
     }
 
     return undefined;

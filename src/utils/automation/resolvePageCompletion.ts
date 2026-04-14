@@ -8,8 +8,9 @@ export type PageCompletionResult =
 export function resolvePageCompletion(
   remainingExpansions: ExpansionBatch[],
   nextPageUrl: string | null,
+  hasRemainingCards: boolean,
 ): PageCompletionResult {
-  if (nextPageUrl !== null) {
+  if (nextPageUrl !== null && hasRemainingCards) {
     return { type: 'nextPage', navigateTo: nextPageUrl };
   }
   if (remainingExpansions.length > 0) {

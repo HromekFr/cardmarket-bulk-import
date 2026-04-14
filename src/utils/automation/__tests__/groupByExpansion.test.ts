@@ -34,4 +34,11 @@ describe('groupByExpansion', () => {
     expect(batches).toHaveLength(1);
     expect(batches[0].cardmarketId).toBe(1);
   });
+
+  it('unknown set code with no match goes to unresolved', () => {
+    const cards = [row('Unknown Card', 'FAKE2')];
+    const { batches, unresolved } = groupByExpansion(cards, SET_DATA);
+    expect(batches).toHaveLength(0);
+    expect(unresolved[0].set).toBe('FAKE2');
+  });
 });

@@ -51,6 +51,10 @@ export function automationReducer(state: AutomationState, action: AutomationActi
       };
     }
 
+    case 'setExpansionCards': {
+      return { ...state, currentExpansionCards: action.cards };
+    }
+
     case 'recordListed': {
       return { ...state, listedCount: state.listedCount + action.count };
     }

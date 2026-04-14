@@ -97,6 +97,32 @@ describe('advanceExpansion', () => {
   });
 });
 
+describe('setExpansionCards', () => {
+  it('replaces currentExpansionCards with the provided list', () => {
+    const initial = runningState({
+      currentExpansionCards: [
+        { name: 'Black Lotus', set: 'LEA', language: 'en', quantity: 1, price: 1, isFoil: false, condition: 2 },
+        { name: 'Mox Ruby', set: 'LEA', language: 'en', quantity: 1, price: 1, isFoil: false, condition: 2 },
+      ],
+    });
+    const remaining = [
+      { name: 'Mox Ruby', set: 'LEA', language: 'en', quantity: 1, price: 1, isFoil: false, condition: 2 },
+    ];
+    const state = automationReducer(initial, { type: 'setExpansionCards', cards: remaining });
+    expect(state.currentExpansionCards).toEqual(remaining);
+  });
+
+  it('sets currentExpansionCards to empty when all cards were matched', () => {
+    const initial = runningState({
+      currentExpansionCards: [
+        { name: 'Black Lotus', set: 'LEA', language: 'en', quantity: 1, price: 1, isFoil: false, condition: 2 },
+      ],
+    });
+    const state = automationReducer(initial, { type: 'setExpansionCards', cards: [] });
+    expect(state.currentExpansionCards).toEqual([]);
+  });
+});
+
 describe('recordListed', () => {
   it('accumulates listed count', () => {
     const s1 = automationReducer(runningState({ listedCount: 5 }), { type: 'recordListed', count: 3 });

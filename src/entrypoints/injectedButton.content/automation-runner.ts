@@ -65,7 +65,21 @@ export async function runAutomationPage(): Promise<void> {
 
   const rowEls = getWebsiteRows();
   const rowNames = rowEls.map((el) => el.textContent);
+
+  console.log(`[automation-runner] expansion cards to place: ${expansionCards.length}`, expansionCards.map((c) => c.name));
+  console.log(`[automation-runner] CardMarket rows on page: ${rowNames.length}`, rowNames);
+
   const { matched, unmatched } = matchCardsToRows(expansionCards, rowNames);
+
+  console.log(`[automation-runner] matched: ${matched.length}`, matched.map((m) => `${m.card.name} → "${m.rowName}"`));
+  console.log(`[automation-runner] not found this page: ${unmatched.length}`, unmatched.map((c) => c.name));
+
+  // Cards not found on this page are passed back so the background can trim
+  // currentExpansionCards — preventing already-listed cards from re-appearing
+  // as unmatched on subsequent pages.
+  const remainingCards = expansionCards.filter(
+    (card) => !matched.some((m) => m.card === card),
+  );
 
   let listedCount = 0;
   for (const { card, rowName } of matched) {
@@ -84,13 +98,17 @@ export async function runAutomationPage(): Promise<void> {
   // Wait for table to update (success indicator)
   await waitForTableMutation();
 
-  // Read the next-page link AFTER the table mutation (task 07)
+  // Read the next-page link AFTER the table mutation (task 07).
+  // Guard: only treat as a next-page link if it points back into the BulkListing flow.
+  // The CardMarket page also contains a paginated existing-stock table whose
+  // a[data-direction="next"] would otherwise be picked up after submission.
   const nextLink = document.querySelector<HTMLAnchorElement>('a[data-direction="next"]');
-  const nextPageUrl = nextLink?.href ?? null;
+  const nextPageUrl =
+    nextLink?.href?.includes('/BulkListing') ? nextLink.href : null;
 
   await sendMessage(
     'cardmarket-bulk-import.pageComplete',
-    { listedCount, unmatchedCards: unmatched, nextPageUrl },
+    { listedCount, unmatchedCards: unmatched, remainingCards, nextPageUrl },
     'background',
   );
 }

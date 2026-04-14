@@ -15,7 +15,7 @@ declare module 'webext-bridge' {
       undefined
     >,
     'cardmarket-bulk-import.pageComplete': ProtocolWithReturn<
-      { listedCount: number; unmatchedCards: UnmatchedCard[]; nextPageUrl: string | null },
+      { listedCount: number; unmatchedCards: UnmatchedCard[]; remainingCards: ManaBoxRow[]; nextPageUrl: string | null },
       undefined
     >,
     'cardmarket-bulk-import.resumeAutomation': ProtocolWithReturn<

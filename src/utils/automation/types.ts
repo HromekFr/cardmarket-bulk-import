@@ -38,6 +38,7 @@ export type AutomationAction =
   | { type: 'resume' }
   | { type: 'advancePage' }
   | { type: 'advanceExpansion' }
+  | { type: 'setExpansionCards'; cards: ManaBoxRow[] }
   | { type: 'recordListed'; count: number }
   | { type: 'recordUnmatched'; cards: UnmatchedCard[] }
   | { type: 'appendLog'; entry: LogEntry }
