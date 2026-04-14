@@ -2,9 +2,9 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    environment: 'happy-dom',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    exclude: ['src/**/*.integration.test.ts', '**/node_modules/**'],
+    environment: 'node',
+    include: ['src/**/*.integration.test.ts'],
+    testTimeout: 30000,
   },
   resolve: {
     alias: {
