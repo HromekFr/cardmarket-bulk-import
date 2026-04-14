@@ -63,4 +63,10 @@ describe('parseManaBoxCsv', () => {
     const nonManabox = new File(['Name,Quantity\nBlack Lotus,1\n'], 'other.csv', { type: 'text/csv' });
     await expect(parseManaBoxCsv(nonManabox, 0.20)).rejects.toThrow();
   });
+
+  it('parses a CSV exported with a UTF-8 BOM', async () => {
+    const rows = await parseManaBoxCsv(makeFile('manabox-bom.csv'), 0);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].name).toBe('Black Lotus');
+  });
 });

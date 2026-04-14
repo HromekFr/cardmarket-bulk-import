@@ -34,6 +34,7 @@ export async function parseManaBoxCsv(file: File, priceFloor: number): Promise<M
   const records: Record<string, string>[] = parse(text, {
     columns: true,
     skipEmptyLines: true,
+    bom: true,
   });
 
   if (records.length === 0 || !('ManaBox ID' in records[0])) {

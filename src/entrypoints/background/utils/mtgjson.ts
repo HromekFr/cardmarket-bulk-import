@@ -4,6 +4,8 @@ import type { Set } from 'mtggraphql';
 import { readCsv } from '../../../utils/csv';
 import { MCM_ID_OVERRIDES } from './mcm-id-overrides';
 
+const SETS_ENDPOINT = 'https://mtgjson.com/api/v5/csv/sets.csv';
+
 async function getMTGJSONDataImpl() {
   const res = await fetch(SETS_ENDPOINT);
   const blob = await res.blob();
