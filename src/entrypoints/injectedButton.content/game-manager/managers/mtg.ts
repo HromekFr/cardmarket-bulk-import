@@ -6,6 +6,7 @@ import GenericGameManager from './generic';
 import type { CommonParsedRowFields } from './generic';
 import { compareNormalized } from '../../../../utils';
 import type { TranslationKey } from '../../../../utils';
+import { fillCondition } from '../utils/condition';
 
 async function getMTGJSONDataImpl() {
   // We can't fetch inside the content script, so we delegate to the background with messages
@@ -26,7 +27,7 @@ const matchSetToCardmarketId = memoize(matchSetToCardmarketIdImpl);
 const VALID_FOIL_VALUES = ['t', '1', 'foil', 'yes'];
 const foilElSelector = 'td input[name^="isFoil"]';
 
-class MtgGameManager extends GenericGameManager<'set' | 'isFoil', { set: string, isFoil: boolean }> {
+class MtgGameManager extends GenericGameManager<'set' | 'isFoil', { set: string, isFoil: boolean, condition: number }> {
   extraColumns: Record<'set' | 'isFoil', TranslationKey> = {
     set: 'injectedButton.gameManagers.mtg.importCsvForm.set.label',
     isFoil: 'injectedButton.gameManagers.mtg.importCsvForm.isFoil.label',
@@ -68,23 +69,26 @@ class MtgGameManager extends GenericGameManager<'set' | 'isFoil', { set: string,
       isFoil: columnMapping['isFoil']
         ? VALID_FOIL_VALUES.includes(String(rawRowData[columnMapping['isFoil']]).toLowerCase())
         : false,
+      condition: 2,
       enabled,
     };
   }
 
   async fillRow(
     trEl: HTMLTableRowElement,
-    row: (CommonParsedRowFields & { set: string, isFoil: boolean }),
+    row: (CommonParsedRowFields & { set: string, isFoil: boolean, condition: number }),
   ): Promise<HTMLTableRowElement> {
     const resolvedEl = await super.fillRow(trEl, row);
     const foilEl: HTMLInputElement = resolvedEl.querySelector(foilElSelector)!;
     if (row.isFoil) foilEl.checked = true;
+    fillCondition(resolvedEl, row.condition);
     return resolvedEl;
   };
 
-  extraTableColumns: Record<'set' | 'isFoil', TranslationKey> = {
+  extraTableColumns: Record<'set' | 'isFoil' | 'condition', null | TranslationKey> = {
     set: 'injectedButton.gameManagers.mtg.selectRowsFormTable.set',
     isFoil: 'injectedButton.gameManagers.mtg.selectRowsFormTable.isFoil',
+    condition: null,
   };
 };
 

@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-export type PanelKey = 'home' | 'instructions' | 'reportIssue' | 'aboutMe';
+export type PanelKey = 'home' | 'instructions' | 'reportIssue' | 'aboutMe' | 'settings' | 'autoList';
 
 export const DEFAULT_PANEL: PanelKey = 'home';
 

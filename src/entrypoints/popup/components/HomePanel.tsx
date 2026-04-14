@@ -8,7 +8,9 @@ import usePanelsContext from './panels-context/usePanelsContext';
 import Icon from '../../../assets/icon.png';
 
 const BUTTON_ORDER: Exclude<PanelKey, 'home'>[] = [
+  'autoList',
   'instructions',
+  'settings',
   'reportIssue',
   'aboutMe',
 ];

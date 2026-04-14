@@ -11,6 +11,7 @@ export default defineConfig({
   manifest: {
     name: 'Cardmarket Bulk Import',
     default_locale: 'en',
+    permissions: ['storage', 'tabs'],
   },
   zip: {
     sourcesRoot: 'src',

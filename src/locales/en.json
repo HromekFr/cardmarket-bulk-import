@@ -34,6 +34,37 @@
                 "kofi_subtitle_1": "A donation is completely optional.",
                 "kofi_subtitle_2": "This extension is 100% free."
             },
+            "autoList": {
+                "button": "Auto-list",
+                "title": "Auto-list",
+                "idle": {
+                    "fileLabel": "ManaBox CSV export",
+                    "startButton": "Start",
+                    "invalidCsv": "Not a valid ManaBox CSV (missing ManaBox ID column)"
+                },
+                "running": {
+                    "stopButton": "Stop",
+                    "resetButton": "Reset",
+                    "log": "Progress log"
+                },
+                "paused": {
+                    "resumeButton": "Resume",
+                    "stopButton": "Stop"
+                },
+                "complete": {
+                    "listed": "Cards listed",
+                    "unmatched": "Unmatched cards",
+                    "newRunButton": "Start new run"
+                }
+            },
+            "settings": {
+                "button": "Settings",
+                "title": "Settings",
+                "priceFloor": "Price Floor (€)",
+                "submissionDelay": "Submission Delay (ms)",
+                "save": "Save",
+                "saved": "Saved!"
+            },
             "disclaimer_a": "Not affiliated or endorsed by Cardmarket.",
             "disclaimer_b": "Use at own risk."
         }

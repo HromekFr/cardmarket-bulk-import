@@ -1,4 +1,4 @@
-import { useState, i18n } from '#imports';
+import { useState, useEffect, i18n } from '#imports';
 
 import { Button, Modal, Image } from 'react-bootstrap';
 import { createPortal } from 'react-dom';
@@ -8,10 +8,16 @@ import SelectRowsForm from './components/SelectRowsForm';
 import SuccessAlert from './components/SuccessAlert';
 import type { ParsedRow } from './game-manager';
 import useGameManager from './game-manager/useGameManager';
+import { runAutomationPage } from './automation-runner';
 import IconTransparent from '../../assets/icon-transparent.png';
 
 function App() {
   const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    // On page load, check if automation is active and run it if so
+    runAutomationPage().catch(console.error);
+  }, []);
   const [importedRows, setImportedRows] = useState<ParsedRow[] | null>(null);
   const [filledCount, setFilledCount] = useState<number | null>(null);
   const gameManager = useGameManager();
