@@ -1,0 +1,4 @@
+2026-04-15 — Task 01 (Content Script Scaffold): Created clearOffers.content entrypoint.
+  - src/entrypoints/clearOffers.content/index.tsx: content script matching *://*.cardmarket.com/*/*/Stock/Offers/Singles*, mounts React into the top pagination row's last col-3
+  - src/entrypoints/clearOffers.content/App.tsx: "Clear All Offers" btn-danger button, enabled/disabled based on presence of articleRow elements via MutationObserver
+  - No removal logic yet (placeholder console.log on click)

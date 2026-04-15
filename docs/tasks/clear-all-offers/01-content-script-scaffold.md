@@ -1,7 +1,7 @@
 ---
 title: Content Script Scaffold
 type: AFK
-state: New
+state: Done
 priority: 2
 created: 2026-04-15
 prd: ../prds/2026-04-15-clear-all-offers.md
