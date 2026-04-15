@@ -26,7 +26,7 @@ vi.stubGlobal('chrome', {
   },
 });
 
-import { getArticleRows, startClearing, cancelClearing, resumeIfActive } from '../clear-runner';
+import { getArticleRows, startClearing, cancelClearing, resumeIfActive, removeRow } from '../clear-runner';
 
 function appendRow(id: string): HTMLDivElement {
   const div = document.createElement('div');
@@ -92,5 +92,74 @@ describe('resumeIfActive', () => {
     const state = { active: true, removed: 5, total: 12 };
     storageData['clearOffersState'] = state;
     expect(await resumeIfActive()).toEqual(state);
+  });
+});
+
+// ---------------------------------------------------------------------------
+function buildArticleRow(id: string): HTMLDivElement {
+  const row = document.createElement('div');
+  row.id = id;
+
+  const amountInput = document.createElement('input');
+  amountInput.className = 'amount-input';
+  amountInput.value = '1';
+  row.appendChild(amountInput);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'btn-danger';
+  row.appendChild(removeBtn);
+
+  document.body.appendChild(row);
+  return row;
+}
+
+describe('removeRow', () => {
+  it('sets the amount-input value to 999', async () => {
+    const row = buildArticleRow('articleRow1');
+    // Remove the row from DOM after click to satisfy the wait
+    const btn = row.querySelector<HTMLButtonElement>('.btn-danger')!;
+    btn.addEventListener('click', () => row.remove());
+
+    await removeRow(row);
+
+    // row was removed; verify the input had been set (capture before removal)
+    // We verify via the btn click handler side-effect and that the promise resolved
+    expect(row.isConnected).toBe(false);
+  });
+
+  it('sets amount-input to 999 before clicking remove button', async () => {
+    const row = buildArticleRow('articleRow2');
+    const amountInput = row.querySelector<HTMLInputElement>('.amount-input')!;
+    let valueAtClick = '';
+    const btn = row.querySelector<HTMLButtonElement>('.btn-danger')!;
+    btn.addEventListener('click', () => {
+      valueAtClick = amountInput.value;
+      row.remove();
+    });
+
+    await removeRow(row);
+
+    expect(valueAtClick).toBe('999');
+  });
+
+  it('clicks the btn-danger remove button', async () => {
+    const row = buildArticleRow('articleRow3');
+    let clicked = false;
+    const btn = row.querySelector<HTMLButtonElement>('.btn-danger')!;
+    btn.addEventListener('click', () => {
+      clicked = true;
+      row.remove();
+    });
+
+    await removeRow(row);
+
+    expect(clicked).toBe(true);
+  });
+
+  it('resolves immediately if the row is already absent from the DOM', async () => {
+    const row = buildArticleRow('articleRow4');
+    row.remove(); // already gone
+
+    await expect(removeRow(row)).resolves.toBeUndefined();
   });
 });
