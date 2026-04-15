@@ -1,3 +1,7 @@
+2026-04-15 — Task 07 (Cancel Mid-Run): Wired Cancel button to stop the removal loop.
+  - clear-runner.ts: clearCurrentPage now accepts optional AbortSignal; checks signal.aborted before each row
+  - App.tsx: AbortController ref created per run; Cancel calls abort() + cancelClearing() + resets UI to idle; aborted signal prevents navigation after cancel
+
 2026-04-15 — Task 06 (Multi-Page Auto-Resume): Extended clearing loop to handle multiple pages.
   - clear-runner.ts: added getBaseOffersUrl() (strips query params, keeps /Singles path), updateRemovedCount() (persists removed counter to storage), clearCurrentPage now takes startRemoved to carry count across reloads
   - App.tsx: resumeIfActive() called on mount; if active + no rows → mark complete; if active + rows → resume clearCurrentPage then navigate; after first-run page clear → navigate to base URL instead of showing done

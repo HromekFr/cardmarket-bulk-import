@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { Button, Modal } from 'react-bootstrap';
 
@@ -21,6 +21,7 @@ function App() {
   const [totalCount, setTotalCount] = useState(0);
   const [removed, setRemoved] = useState(0);
   const [doneCount, setDoneCount] = useState(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Watch article row presence for idle button enabled/disabled state
   useEffect(() => {
@@ -55,11 +56,12 @@ function App() {
       }
 
       // Continue clearing from where we left off
-      clearCurrentPage(state.removed, state.total, (r) => setRemoved(r)).then((totalRemoved) => {
-        // Navigate to base URL to pick up articles from subsequent pages
-        window.location.href = getBaseOffersUrl();
-        // The done state will be set on the next reload when no rows remain
+      const controller = new AbortController();
+      abortRef.current = controller;
+      clearCurrentPage(state.removed, state.total, (r) => setRemoved(r), controller.signal).then((totalRemoved) => {
+        if (controller.signal.aborted) return;
         void totalRemoved;
+        window.location.href = getBaseOffersUrl();
       });
     });
   }, []);
@@ -76,10 +78,21 @@ function App() {
     setUiState('running');
     await startClearing(totalCount);
 
-    await clearCurrentPage(0, totalCount, (r) => setRemoved(r));
+    const controller = new AbortController();
+    abortRef.current = controller;
+    await clearCurrentPage(0, totalCount, (r) => setRemoved(r), controller.signal);
+
+    if (controller.signal.aborted) return;
 
     // Navigate to base URL; resume logic will pick up or mark complete on reload
     window.location.href = getBaseOffersUrl();
+  };
+
+  const handleCancel = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    cancelClearing();
+    setUiState('idle');
   };
 
   // --- Running state ---
@@ -87,10 +100,7 @@ function App() {
     return (
       <span className="d-flex align-items-center gap-2">
         <span>Removing… ({removed}/{totalCount})</span>
-        <Button variant="secondary" size="sm" onClick={() => {
-          cancelClearing();
-          setUiState('idle');
-        }}>
+        <Button variant="secondary" size="sm" onClick={handleCancel}>
           Cancel
         </Button>
       </span>

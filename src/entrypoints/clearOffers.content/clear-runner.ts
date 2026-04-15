@@ -60,10 +60,12 @@ export async function clearCurrentPage(
   startRemoved: number,
   total: number,
   onProgress: ProgressCallback,
+  signal?: AbortSignal,
 ): Promise<number> {
   const ids = getArticleRows();
   let removed = startRemoved;
   for (const id of ids) {
+    if (signal?.aborted) break;
     const row = document.getElementById(id);
     if (row) {
       await removeRow(row);
