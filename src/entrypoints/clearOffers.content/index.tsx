@@ -9,13 +9,7 @@ export default defineContentScript({
   main: (ctx) => {
     const ui = createIntegratedUi(ctx, {
       position: 'inline',
-      anchor: () => {
-        const paginationRows = document.querySelectorAll('div.row.pagination');
-        if (paginationRows.length === 0) return null;
-        const topRow = paginationRows[0];
-        const col3Last = topRow.querySelector('div.col-3:last-child');
-        return col3Last ?? null;
-      },
+      anchor: 'div.row.pagination div.col-3:last-child',
       append: 'last',
       onMount: (container) => {
         const root = ReactDOM.createRoot(container);
