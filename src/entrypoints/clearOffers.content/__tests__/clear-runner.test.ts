@@ -1,6 +1,32 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { getArticleRows } from '../clear-runner';
+// --- chrome.storage stub (must be set up before importing clear-runner) ---
+const storageData: Record<string, unknown> = {};
+
+vi.stubGlobal('chrome', {
+  storage: {
+    local: {
+      get: vi.fn((keys: string[], cb: (r: Record<string, unknown>) => void) => {
+        const result: Record<string, unknown> = {};
+        for (const k of keys) {
+          if (k in storageData) result[k] = storageData[k];
+        }
+        cb(result);
+      }),
+      set: vi.fn((items: Record<string, unknown>, cb?: () => void) => {
+        Object.assign(storageData, items);
+        cb?.();
+      }),
+      remove: vi.fn((keys: string | string[], cb?: () => void) => {
+        const arr = Array.isArray(keys) ? keys : [keys];
+        for (const k of arr) delete storageData[k];
+        cb?.();
+      }),
+    },
+  },
+});
+
+import { getArticleRows, startClearing, cancelClearing, resumeIfActive } from '../clear-runner';
 
 function appendRow(id: string): HTMLDivElement {
   const div = document.createElement('div');
@@ -9,11 +35,14 @@ function appendRow(id: string): HTMLDivElement {
   return div;
 }
 
-describe('getArticleRows', () => {
-  beforeEach(() => {
-    document.body.innerHTML = '';
-  });
+beforeEach(() => {
+  document.body.innerHTML = '';
+  for (const k of Object.keys(storageData)) delete storageData[k];
+  vi.clearAllMocks();
+});
 
+// ---------------------------------------------------------------------------
+describe('getArticleRows', () => {
   it('returns an empty array when no articleRow elements are present', () => {
     expect(getArticleRows()).toEqual([]);
   });
@@ -35,5 +64,33 @@ describe('getArticleRows', () => {
     appendRow('someOtherDiv');
     appendRow('notAnArticleRow99');
     expect(getArticleRows()).toEqual(['articleRow42']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('startClearing', () => {
+  it('writes { active: true, removed: 0, total } to storage', async () => {
+    await startClearing(17);
+    expect(storageData['clearOffersState']).toEqual({ active: true, removed: 0, total: 17 });
+  });
+});
+
+describe('cancelClearing', () => {
+  it('removes the clearOffersState key from storage', async () => {
+    storageData['clearOffersState'] = { active: true, removed: 3, total: 10 };
+    await cancelClearing();
+    expect('clearOffersState' in storageData).toBe(false);
+  });
+});
+
+describe('resumeIfActive', () => {
+  it('returns null when storage is empty', async () => {
+    expect(await resumeIfActive()).toBeNull();
+  });
+
+  it('returns the persisted state when an active clear is stored', async () => {
+    const state = { active: true, removed: 5, total: 12 };
+    storageData['clearOffersState'] = state;
+    expect(await resumeIfActive()).toEqual(state);
   });
 });
