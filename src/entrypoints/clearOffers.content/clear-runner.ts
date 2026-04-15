@@ -32,6 +32,30 @@ export function resumeIfActive(): Promise<ClearOffersState | null> {
   });
 }
 
+export function getTotalCount(): number {
+  const el = document.querySelector<HTMLElement>('span.total-count');
+  return el ? parseInt(el.textContent ?? '0', 10) : 0;
+}
+
+type ProgressCallback = (removed: number, total: number) => void;
+
+export async function clearCurrentPage(
+  total: number,
+  onProgress: ProgressCallback,
+): Promise<number> {
+  const ids = getArticleRows();
+  let removed = 0;
+  for (const id of ids) {
+    const row = document.getElementById(id);
+    if (row) {
+      await removeRow(row);
+      removed++;
+      onProgress(removed, total);
+    }
+  }
+  return removed;
+}
+
 export function removeRow(row: HTMLElement): Promise<void> {
   return new Promise((resolve) => {
     // If already removed, resolve immediately

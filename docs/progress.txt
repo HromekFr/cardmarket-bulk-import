@@ -1,3 +1,7 @@
+2026-04-15 — Task 05 (Single-Page Clear + Confirmation UI): Wired full single-page clear flow.
+  - clear-runner.ts: added getTotalCount() (reads span.total-count) and clearCurrentPage(total, onProgress)
+  - App.tsx: three-state UI (idle → running → done); confirmation Modal with article count; live "Removing… N/total" counter; 3s done message then reset to idle
+
 2026-04-15 — Task 04 (Single Row Removal TDD): Implemented removeRow() in clear-runner.ts.
   - Sets .amount-input to 999, clicks .btn-danger, waits via MutationObserver for row removal
   - Resolves immediately if row already absent
