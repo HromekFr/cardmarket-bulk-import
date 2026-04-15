@@ -2,7 +2,15 @@ import { useState, useEffect } from 'react';
 
 import { Button, Modal } from 'react-bootstrap';
 
-import { getArticleRows, getTotalCount, startClearing, clearCurrentPage, cancelClearing } from './clear-runner';
+import {
+  getArticleRows,
+  getTotalCount,
+  startClearing,
+  clearCurrentPage,
+  cancelClearing,
+  resumeIfActive,
+  getBaseOffersUrl,
+} from './clear-runner';
 
 type UiState = 'idle' | 'running' | 'done';
 
@@ -14,18 +22,46 @@ function App() {
   const [removed, setRemoved] = useState(0);
   const [doneCount, setDoneCount] = useState(0);
 
+  // Watch article row presence for idle button enabled/disabled state
   useEffect(() => {
     const checkRows = () => {
       const rows = document.querySelectorAll('div[id^="articleRow"]');
       setHasRows(rows.length > 0);
     };
-
     checkRows();
-
     const observer = new MutationObserver(checkRows);
     observer.observe(document.body, { childList: true, subtree: true });
-
     return () => observer.disconnect();
+  }, []);
+
+  // On mount, check if a clear is in progress and resume
+  useEffect(() => {
+    resumeIfActive().then((state) => {
+      if (!state) return;
+
+      setTotalCount(state.total);
+      setRemoved(state.removed);
+      setUiState('running');
+
+      const rows = getArticleRows();
+      if (rows.length === 0) {
+        // No more rows — clear is complete
+        cancelClearing().then(() => {
+          setDoneCount(state.removed);
+          setUiState('done');
+          setTimeout(() => setUiState('idle'), 3000);
+        });
+        return;
+      }
+
+      // Continue clearing from where we left off
+      clearCurrentPage(state.removed, state.total, (r) => setRemoved(r)).then((totalRemoved) => {
+        // Navigate to base URL to pick up articles from subsequent pages
+        window.location.href = getBaseOffersUrl();
+        // The done state will be set on the next reload when no rows remain
+        void totalRemoved;
+      });
+    });
   }, []);
 
   const handleClearClick = () => {
@@ -40,17 +76,10 @@ function App() {
     setUiState('running');
     await startClearing(totalCount);
 
-    const totalRemoved = await clearCurrentPage(totalCount, (r) => {
-      setRemoved(r);
-    });
+    await clearCurrentPage(0, totalCount, (r) => setRemoved(r));
 
-    await cancelClearing();
-    setDoneCount(totalRemoved);
-    setUiState('done');
-
-    setTimeout(() => {
-      setUiState('idle');
-    }, 3000);
+    // Navigate to base URL; resume logic will pick up or mark complete on reload
+    window.location.href = getBaseOffersUrl();
   };
 
   // --- Running state ---

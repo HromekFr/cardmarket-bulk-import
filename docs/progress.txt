@@ -1,3 +1,7 @@
+2026-04-15 — Task 06 (Multi-Page Auto-Resume): Extended clearing loop to handle multiple pages.
+  - clear-runner.ts: added getBaseOffersUrl() (strips query params, keeps /Singles path), updateRemovedCount() (persists removed counter to storage), clearCurrentPage now takes startRemoved to carry count across reloads
+  - App.tsx: resumeIfActive() called on mount; if active + no rows → mark complete; if active + rows → resume clearCurrentPage then navigate; after first-run page clear → navigate to base URL instead of showing done
+
 2026-04-15 — Task 05 (Single-Page Clear + Confirmation UI): Wired full single-page clear flow.
   - clear-runner.ts: added getTotalCount() (reads span.total-count) and clearCurrentPage(total, onProgress)
   - App.tsx: three-state UI (idle → running → done); confirmation Modal with article count; live "Removing… N/total" counter; 3s done message then reset to idle
