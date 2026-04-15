@@ -1,3 +1,7 @@
+2026-04-15 — Task 02 (Row Scraping TDD): Implemented getArticleRows() in clear-runner.ts with 4 passing tests.
+  - src/entrypoints/clearOffers.content/clear-runner.ts: getArticleRows() queries div[id^="articleRow"] and returns IDs
+  - src/entrypoints/clearOffers.content/__tests__/clear-runner.test.ts: 4 tests covering empty, single, multiple, and filtering
+
 2026-04-15 — Task 01 (Content Script Scaffold): Created clearOffers.content entrypoint.
   - src/entrypoints/clearOffers.content/index.tsx: content script matching *://*.cardmarket.com/*/*/Stock/Offers/Singles*, mounts React into the top pagination row's last col-3
   - src/entrypoints/clearOffers.content/App.tsx: "Clear All Offers" btn-danger button, enabled/disabled based on presence of articleRow elements via MutationObserver
