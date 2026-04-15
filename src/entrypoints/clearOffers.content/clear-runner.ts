@@ -31,3 +31,30 @@ export function resumeIfActive(): Promise<ClearOffersState | null> {
     });
   });
 }
+
+export function removeRow(row: HTMLElement): Promise<void> {
+  return new Promise((resolve) => {
+    // If already removed, resolve immediately
+    if (!row.isConnected) {
+      resolve();
+      return;
+    }
+
+    const parent = row.parentElement!;
+
+    const observer = new MutationObserver(() => {
+      if (!row.isConnected) {
+        observer.disconnect();
+        resolve();
+      }
+    });
+    observer.observe(parent, { childList: true });
+
+    // Set amount to 999 then click the remove button
+    const amountInput = row.querySelector<HTMLInputElement>('.amount-input');
+    if (amountInput) amountInput.value = '999';
+
+    const removeBtn = row.querySelector<HTMLElement>('.btn-danger');
+    removeBtn?.click();
+  });
+}
