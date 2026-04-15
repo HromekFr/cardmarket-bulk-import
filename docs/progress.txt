@@ -1,3 +1,10 @@
+2026-04-15 — Task 03 (State Management TDD): Implemented startClearing, cancelClearing, resumeIfActive in clear-runner.ts.
+  - ClearOffersState interface + STORAGE_KEY constant
+  - startClearing(total) writes { active: true, removed: 0, total } to chrome.storage.local
+  - cancelClearing() removes clearOffersState key
+  - resumeIfActive() returns stored state or null
+  - 4 new tests (total 8 passing)
+
 2026-04-15 — Task 02 (Row Scraping TDD): Implemented getArticleRows() in clear-runner.ts with 4 passing tests.
   - src/entrypoints/clearOffers.content/clear-runner.ts: getArticleRows() queries div[id^="articleRow"] and returns IDs
   - src/entrypoints/clearOffers.content/__tests__/clear-runner.test.ts: 4 tests covering empty, single, multiple, and filtering
