@@ -4,6 +4,7 @@ import { onMessage } from 'webext-bridge/background';
 
 import { getMTGJSONData } from './utils/mtgjson';
 import { groupByExpansion } from '../../utils/automation/groupByExpansion';
+import { buildSkipSummaryEntry } from '../../utils/automation/skipSummary';
 import { dispatchAutomation, getAutomationState } from '../../utils/automation/store';
 import { buildPageUrl } from '../../utils/automation/url';
 import { resolvePageCompletion } from '../../utils/automation/resolvePageCompletion';
@@ -66,18 +67,9 @@ export default defineBackground(() => {
 
     if (unresolved.length > 0) {
       await dispatchAutomation({ type: 'recordUnmatched', cards: unresolved });
-      // Group by set code so the detail list stays concise
-      const bySet = unresolved.reduce<Record<string, number>>((acc, c) => {
-        acc[c.set] = (acc[c.set] ?? 0) + c.quantity;
-        return acc;
-      }, {});
       await dispatchAutomation({
         type: 'appendLog',
-        entry: {
-          timestamp: Date.now(),
-          message: `${unresolved.length} card(s) skipped — unrecognised set codes.`,
-          detail: Object.entries(bySet).map(([set, qty]) => `${set}: ${qty} card(s)`),
-        },
+        entry: { timestamp: Date.now(), ...buildSkipSummaryEntry(unresolved) },
       });
     }
 
