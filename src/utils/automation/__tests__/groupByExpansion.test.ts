@@ -41,4 +41,16 @@ describe('groupByExpansion', () => {
     expect(batches).toHaveLength(0);
     expect(unresolved[0].set).toBe('FAKE2');
   });
+
+  it('resolves a ManaBox alias code that is only in matchKeys (not a native MTGJSON code)', () => {
+    // Simulate getMTGJSONDataImpl injecting an alias: ManaBox uses 'LTC' but MTGJSON uses 'LTC_NATIVE'
+    const setsWithAlias = [
+      { matchKeys: ['LTC_NATIVE', 'Tales of Middle-earth Commander', 'LTC'], code: 'LTC_NATIVE', cardmarketId: 99 },
+    ];
+    const cards = [row('Gandalf', 'LTC')];
+    const { batches, unresolved } = groupByExpansion(cards, setsWithAlias);
+    expect(unresolved).toHaveLength(0);
+    expect(batches).toHaveLength(1);
+    expect(batches[0].cardmarketId).toBe(99);
+  });
 });
