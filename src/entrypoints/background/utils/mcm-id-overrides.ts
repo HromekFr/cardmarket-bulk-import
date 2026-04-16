@@ -19,4 +19,16 @@ export const MCM_ID_OVERRIDES: Record<string, number> = {
   SPM: 6070, // Marvel's Spider-Man
   TLA: 6261, // Avatar: The Last Airbender
   TMT: 6345, // Teenage Mutant Ninja Turtles
+
+  // Case D — ManaBox set codes with no mcmId in MTGJSON; CardMarket name differs from MTGJSON name
+  ACR: 5655, // Assassin's Creed (Universes Beyond) → "Universes Beyond: Assassin's Creed"
+  BRR: 5170, // The Brothers' War Retro Artifacts → "Retro Frame Artifacts"
+  CLU: 5572, // Ravnica: Clue Edition → "Ravnica: Cluedo Edition" (different spelling)
+  FDN: 5852, // Foundations → "Magic: The Gathering Foundations"
+  H2R: 4244, // Modern Horizons 2 Timeshifts (retro-frame reprints) → "Modern Horizons 2: Extras"
+  LTC: 5296, // Tales of Middle-earth Commander → "Commander: The Lord of the Rings: Tales of Middle-earth"
+  NEC: 4474, // Neon Dynasty Commander → "Commander: Kamigawa: Neon Dynasty"
+  PBRO: 5178, // The Brothers' War Promos → "The Brothers' War: Promos"
+  TSB: 56,   // Time Spiral Timeshifted (purple-bordered bonus sheet) → "Time Spiral"
+  WOT: 5442, // Wilds of Eldraine: Enchanting Tales (bonus sheet) → "Enchanting Tales"
 };

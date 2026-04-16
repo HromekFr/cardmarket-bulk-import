@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { MCM_ID_OVERRIDES } from './mcm-id-overrides';
+import { MANABOX_CODE_ALIASES } from './manabox-code-aliases';
+import { groupByExpansion } from '../../../utils/automation/groupByExpansion';
 
 const SETS_CSV_URL = 'https://mtgjson.com/api/v5/csv/sets.csv';
 
@@ -18,12 +20,22 @@ const VARIANT_SUFFIXES = [
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CM_DROPDOWN_PATH = resolve(__dirname, '../../../../../page_structure/sets_dropdown.html');
+const COLLECTION_CSV_PATH = resolve(__dirname, '../../../../../page_structure/ManaBox_Collection.csv');
 
 type MTGJSONRow = {
   code: string;
   name: string;
   mcmId: string;
   mcmName: string;
+  codeV3: string;
+  keyruneCode: string;
+  mtgoCode: string;
+  id: string;
+};
+
+type ManaBoxCsvRow = {
+  'Set code': string;
+  Quantity: string;
 };
 
 type Suggestion = { id: number; name: string };
@@ -172,6 +184,91 @@ describe('CardMarket ID mappings', () => {
     expect(
       mismatches,
       `Found ${mismatches.length} uncovered case C mismatch(es). Add entries to MCM_ID_OVERRIDES in mcm-id-overrides.ts:\n\n${mismatches.join('\n\n')}`,
+    ).toHaveLength(0);
+  });
+
+  it('all ManaBox set codes resolve to a CardMarket expansion [case D]', async () => {
+    // Parse the real collection CSV (no browser FileReader needed — use csv-parse directly)
+    const csvText = readFileSync(COLLECTION_CSV_PATH, 'utf-8');
+    const manaboxRows = parse(csvText, {
+      columns: true,
+      skip_empty_lines: true,
+      bom: true,
+    }) as ManaBoxCsvRow[];
+
+    const uniqueSetCodes = [...new Set(manaboxRows.map((r) => r['Set code']).filter(Boolean))];
+
+    // Build SetData from MTGJSON rows (same logic as getMTGJSONDataImpl) with aliases applied
+    const setData = rows
+      .filter((r) => !!r.mcmId || !!MCM_ID_OVERRIDES[r.code])
+      .map((r) => {
+        const aliasKeys = Object.entries(MANABOX_CODE_ALIASES)
+          .filter(([, mtgjsonCode]) => mtgjsonCode === r.code)
+          .map(([manaboxCode]) => manaboxCode);
+        return {
+          matchKeys: [r.code, r.codeV3, r.keyruneCode, r.id, r.mcmId, r.mcmName, r.mtgoCode, r.name, ...aliasKeys]
+            .filter((v) => !!v)
+            .map(String),
+          code: r.code,
+          cardmarketId: MCM_ID_OVERRIDES[r.code] ?? parseInt(r.mcmId, 10),
+        };
+      });
+
+    // Wrap unique set codes as minimal card objects for groupByExpansion
+    const cards = uniqueSetCodes.map((code) => ({
+      name: code,
+      set: code,
+      language: 'English',
+      quantity: 1,
+      price: 0,
+      isFoil: false,
+      condition: 2 as const,
+    }));
+
+    const { unresolved } = groupByExpansion(cards, setData);
+
+    if (unresolved.length === 0) return;
+
+    // For each unresolved code, generate an actionable suggestion
+    const suggestions = unresolved.map(({ set: code }) => {
+      // Try to fuzzy-find in MTGJSON rows by code/codeV3/mtgoCode/name
+      const mtgjsonMatch = rows.find(
+        (r) =>
+          r.code?.toLowerCase() === code.toLowerCase() ||
+          r.codeV3?.toLowerCase() === code.toLowerCase() ||
+          r.mtgoCode?.toLowerCase() === code.toLowerCase() ||
+          r.name?.toLowerCase() === code.toLowerCase(),
+      );
+
+      if (mtgjsonMatch) {
+        const hasCardMarketMapping = !!mtgjsonMatch.mcmId || !!MCM_ID_OVERRIDES[mtgjsonMatch.code];
+        if (!hasCardMarketMapping) {
+          // Set is in MTGJSON but filtered out (no mcmId) — needs MCM_ID_OVERRIDES (Case D/Y)
+          const cmSuggestion = findSuggestion(mtgjsonMatch.name, mtgjsonMatch.mcmName, cmByName);
+          return (
+            `  [CASE_D] "${code}" (${mtgjsonMatch.name}) is in MTGJSON but has no CardMarket ID mapping\n` +
+            formatSuggestion(code, cmSuggestion)
+          );
+        }
+        // Set has a CardMarket mapping but ManaBox code differs — needs MANABOX_CODE_ALIASES (Case D/X)
+        return (
+          `  [CASE_D] "${code}" exists in MTGJSON as "${mtgjsonMatch.code}" but code differs\n` +
+          `    → MANABOX_CODE_ALIASES["${code}"] = "${mtgjsonMatch.code}"  // ${mtgjsonMatch.name}`
+        );
+      }
+
+      // Set not found in MTGJSON at all — try to find on CardMarket by name
+      const cmSuggestion = findSuggestion(code, code, cmByName);
+      return (
+        `  [CASE_D] "${code}" not found in MTGJSON at all\n` +
+        formatSuggestion(code, cmSuggestion)
+      );
+    });
+
+    expect(
+      suggestions,
+      `Found ${suggestions.length} unresolved ManaBox set code(s) after applying MANABOX_CODE_ALIASES.\n` +
+        `Add entries to manabox-code-aliases.ts or mcm-id-overrides.ts:\n\n${suggestions.join('\n\n')}`,
     ).toHaveLength(0);
   });
 });
